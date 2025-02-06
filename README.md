@@ -1,3 +1,10 @@
+# Steps to run
+- Activate virtual environment
+- Install dependencies
+- Run script
+    ```
+    py app.py
+    ```
 # Tips to implement
 ```
 # pip install python-socks[asyncio]
