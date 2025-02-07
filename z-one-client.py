@@ -10,9 +10,10 @@ groupName = os.getenv("GROUP_NAME")
 
 with open("env.json", "r") as f:
     env_json = json.load(f)
-API_ID = env_json[0]["api_id"]
-API_HASH = env_json[0]["api_hash"]
-SESSION_NAME = env_json[0]["session_name"]
+# PHONE_NUMBER = +1 343 901 0256
+API_ID = "9733759"
+API_HASH = "1bcb9a9d31583a532c7489e6b351239a"
+SESSION_NAME = "session8"
 
 client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
@@ -193,7 +194,7 @@ async def main():
     group = await client.get_entity(groupName)
     while True:
         await client.send_message(group, messages[random.randint(0, len(messages) - 1)])
-        time.sleep(random.randint(10, 20))
+        time.sleep(random.randint(60, 80))
 
 
 with client:

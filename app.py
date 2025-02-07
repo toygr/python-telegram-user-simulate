@@ -179,7 +179,8 @@ def get_message():
 
 async def message_handler(client, event):
     # if event.message.text.startswith("/react"):
-    if random.randint(0, 100) < 20:
+    if random.randint(0, 100) < 5:
+        await asyncio.sleep(random.randint(8, 20))
         print(f"React to: {event.message.text}")  # Print the message text for debugging
         try:
             await client(
@@ -196,9 +197,9 @@ async def message_handler(client, event):
             await event.reply(get_message())
         except Exception as e:
             print(f"Error sending reaction: {e}")
-    else:
-        sender = await event.get_sender()
-        print(f"New message from {sender.username}: {event.message.text}")
+    # else:
+    #     sender = await event.get_sender()
+    #     print(f"New message from {sender.username}: {event.message.text}")
     # replied_msg = await event.get_reply_message()
     # if replied_msg:
     #     await replied_msg.reply("This is a reply to your message!")
@@ -224,6 +225,7 @@ async def main():
 
     # Run all clients
     async def run_client(client):
+        await asyncio.sleep(random.randint(0, 40))
         try:
             async with client:
                 me = await client.get_me()
@@ -235,13 +237,13 @@ async def main():
                 while True:
                     try:
                         async with client.action(group.id, "typing"):
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(random.randint(3, 6))
                             message = get_message()
                             await client.send_message(group, get_message())
                             print(
                                 f"Client {client.session.filename} sent message: {message}"
                             )
-                        sleep_duration = random.randint(50, 60)
+                        sleep_duration = random.randint(50, 80)
                         await asyncio.sleep(sleep_duration)  # Non-blocking sleep
                     except Exception as e:
                         print(
