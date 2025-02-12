@@ -120,9 +120,9 @@ async def main():
         async def handler(event):
             await message_handler(client, event)
 
-    # Attach the handler to each client
-    for client in clients:
-        attach_handler(client)
+    # # Attach the handler to each client
+    # for client in clients:
+    #     attach_handler(client)
 
     # Run all clients
     async def run_client(client):
