@@ -10,10 +10,10 @@ groupName = os.getenv("GROUP_NAME")
 
 with open("env.json", "r") as f:
     env_json = json.load(f)
-# PHONE_NUMBER = +1 343 901 0256
-API_ID = "9733759"
-API_HASH = "1bcb9a9d31583a532c7489e6b351239a"
-SESSION_NAME = "session8"
+# PHONE_NUMBER = +1 828 374 3717
+API_ID = "29030505"
+API_HASH = "c72a1e40b4025bd304451442f11af39d"
+SESSION_NAME = "session7"
 
 client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
