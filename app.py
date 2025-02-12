@@ -169,6 +169,7 @@ async def main():
                                 prev_timestamp != 0
                                 and (current_time - prev_timestamp) < timeout
                             ):
+                                await asyncio.sleep(5)
                                 continue
                             async with client.action(group_item["group"].id, "typing"):
                                 await asyncio.sleep(random.randint(3, 10))
@@ -224,7 +225,8 @@ async def run_server():
     await server.serve()
     
 
+async def start_main():
+    await asyncio.gather(main(), run_server())
+
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_until_complete(run_server())
+    asyncio.run(start_main())
