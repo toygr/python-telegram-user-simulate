@@ -2,10 +2,12 @@ from telethon import TelegramClient, events, functions, types
 from telethon.errors import FloodWaitError
 import random
 from calculate_sha256 import calculate_sha256
+from Tee import Tee
 import json
 import asyncio
 from dotenv import load_dotenv
 import os
+import sys
 import time
 import pandas as pd
 import numpy as np
@@ -13,6 +15,9 @@ from flask import Flask, request, render_template, redirect, url_for
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
 
+sys.stdout = Tee("output.txt")
+# sys.stdout.file.close()
+# sys.stdout = sys.stdout.stdout
 app = Flask(__name__)
 # app.debug = True
 asgi_app = WsgiToAsgi(app)
@@ -89,19 +94,35 @@ async def message_handler(client, event, session_name):
     # if event.message.text.startswith("/react"):
     if not FLAG_BOT_WORK:
         return
-    sender = await event.get_sender()
-    id = sender.id
-    message = event.message.text
-    hash = calculate_sha256(id + message)
-    if hash in messageItemHashmap:
-        messageItem = messageItemHashmap[hash]
-        if session_name in messageItem["replying_session_names"]:
-            index = messageItem["replying_session_names"].index(session_name)
-            timeout = messageItem["reply_timeout"] * (index + 1)
-            reply_msg = str(messageItem["messageItem"]["replies"][index])
-            if not reply_msg == "nan":
-                await asyncio.sleep(timeout)
-                await event.reply(reply_msg)
+    try:
+        id = str(event.sender_id)
+        message = event.message.text
+        try:
+            chat_name = (
+                f"@{event.chat.username}"
+                if hasattr(event.chat, "username") and event.chat.username
+                else "No username"
+            )
+        except Exception as e:
+            chat_name = "Unknown"
+        hash = calculate_sha256(id + message)
+        if hash in messageItemHashmap:
+            messageItem = messageItemHashmap[hash]
+            if session_name in messageItem["replying_session_names"]:
+                index = messageItem["replying_session_names"].index(session_name)
+                timeout = messageItem["reply_timeout"] * (index + 1)
+                reply_msg = str(messageItem["messageItem"]["replies"][index])
+                origin_session_name = messageItem["session_name"]
+                if not reply_msg == "nan":
+                    await asyncio.sleep(timeout)
+                    await event.reply(reply_msg)
+                    print(
+                        f"Client {session_name} replied in group: {chat_name}, id: {id}, {origin_session_name}'s msg ==>: {message} ==> with this reply_msg: {reply_msg}"
+                    )
+                # if index == messageItem["reply_limit"] - 1:
+                #     del messageItemHashmap[hash]
+    except Exception as e:
+        print(f"Error when replying: {e}")
     # if random.randint(0, 100) < 5:
     #     await asyncio.sleep(random.randint(8, 20))
     #     print(f"React to: {event.message.text}")  # Print the message text for debugging
@@ -159,8 +180,10 @@ async def main():
         attach_handler(client["client"], client["session_name"])
 
     # Run all clients
-    async def run_client(client, gender):
-        await asyncio.sleep(random.randint(0, 60))  # TODO: uncomment this in production
+    async def run_client(client, gender, session_name, client_index):
+        await asyncio.sleep(
+            client_index * 300 + random.randint(0, 60)
+        )  # TODO: uncomment this in production
         try:
             async with client:
                 me = await client.get_me()
@@ -184,7 +207,7 @@ async def main():
                 ]
                 while True:
                     await asyncio.sleep(5)
-                    for i in len(groups):
+                    for i in range(len(groups)):
                         groups[i]["timeout"] = groupData[i]["timeout"]
                         groups[i]["reply_timeout"] = groupData[i]["reply_timeout"]
                         groups[i]["reply_limit"] = groupData[i]["reply_limit"]
@@ -209,6 +232,8 @@ async def main():
 
                                 replying_session_names = set()
                                 for i in range(group_item["reply_limit"]):
+                                    if str(messageItem["replies"][i]) == "nan":
+                                        break
                                     len_clients = len(clients)
                                     while True:
                                         index = random.randint(0, len_clients - 1)
@@ -216,6 +241,8 @@ async def main():
                                         if (
                                             choosen_client["gender"]
                                             == messageItem["gender"]
+                                            and session_name
+                                            != choosen_client["session_name"]
                                         ):
                                             replying_session_names.add(
                                                 choosen_client["session_name"]
@@ -223,6 +250,7 @@ async def main():
                                             break
 
                                 messageItemHashmap[calculate_sha256(id + message)] = {
+                                    "session_name": session_name,
                                     "messageItem": messageItem,
                                     "reply_timeout": group_item["reply_timeout"],
                                     "reply_limit": group_item["reply_limit"],
@@ -233,7 +261,7 @@ async def main():
 
                                 await client.send_message(group_item["group"], message)
                                 print(
-                                    f"Client {client.session.filename} sent message: {message}"
+                                    f"Client {client.session.filename} sent message into group: {group_item["name"]}: {message}, replying_session_names: {replying_session_names}"
                                 )
                                 group_item["prev_timestamp"] = int(time.time())
                             await asyncio.sleep(10)  # Non-blocking sleep
@@ -249,7 +277,10 @@ async def main():
         except Exception as e:
             print(f"Client {client.session.filename} encountered an error: {e}")
 
-    tasks = [run_client(client["client"], client["gender"]) for client in clients]
+    tasks = [
+        run_client(client["client"], client["gender"], client["session_name"], index)
+        for index, client in enumerate(clients)
+    ]
     await asyncio.gather(*tasks)
 
 
