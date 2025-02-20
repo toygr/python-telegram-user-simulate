@@ -2,12 +2,11 @@ from telethon import TelegramClient, events, functions, types
 from telethon.errors import FloodWaitError
 import random
 from calculate_sha256 import calculate_sha256
-from Tee import Tee
+from custom_print import custom_print
 import json
 import asyncio
 from dotenv import load_dotenv
 import os
-import sys
 import time
 import pandas as pd
 import numpy as np
@@ -15,9 +14,6 @@ from flask import Flask, request, render_template, redirect, url_for
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
 
-sys.stdout = Tee("output.txt")
-# sys.stdout.file.close()
-# sys.stdout = sys.stdout.stdout
 app = Flask(__name__)
 # app.debug = True
 asgi_app = WsgiToAsgi(app)
@@ -114,18 +110,19 @@ async def message_handler(client, event, session_name):
                 reply_msg = str(messageItem["messageItem"]["replies"][index])
                 origin_session_name = messageItem["session_name"]
                 if not reply_msg == "nan":
+                    custom_print(f"Waiting for replying message: {session_name}")
                     await asyncio.sleep(timeout)
                     await event.reply(reply_msg)
-                    print(
+                    custom_print(
                         f"Client {session_name} replied in group: {chat_name}, id: {id}, {origin_session_name}'s msg ==>: {message} ==> with this reply_msg: {reply_msg}"
                     )
                 # if index == messageItem["reply_limit"] - 1:
                 #     del messageItemHashmap[hash]
     except Exception as e:
-        print(f"Error when replying: {e}")
+        custom_print(f"Error when replying: {e}")
     # if random.randint(0, 100) < 5:
     #     await asyncio.sleep(random.randint(8, 20))
-    #     print(f"React to: {event.message.text}")  # Print the message text for debugging
+    #     custom_print(f"React to: {event.message.text}")  # Print the message text for debugging
     #     try:
     #         await client(
     #             functions.messages.SendReactionRequest(
@@ -140,10 +137,10 @@ async def message_handler(client, event, session_name):
     #         )
     #         await event.reply(get_message())
     #     except Exception as e:
-    #         print(f"Error sending reaction: {e}")
+    #         custom_print(f"Error sending reaction: {e}")
     # else:
     #     sender = await event.get_sender()
-    #     print(f"New message from {sender.username}: {event.message.text}")
+    #     custom_print(f"New message from {sender.username}: {event.message.text}")
     # replied_msg = await event.get_reply_message()
     # if replied_msg:
     #     await replied_msg.reply("This is a reply to your message!")
@@ -152,7 +149,7 @@ async def message_handler(client, event, session_name):
 async def main():
     clients = []
     for client_item in env_json:
-        print(f"Starting: {client_item["phone_number"]}")
+        custom_print(f"Starting: {client_item["phone_number"]}")
         clients.append(
             {
                 "session_name": client_item["session_name"],
@@ -181,14 +178,14 @@ async def main():
 
     # Run all clients
     async def run_client(client, gender, session_name, client_index):
-        await asyncio.sleep(
-            client_index * 300 + random.randint(0, 60)
-        )  # TODO: uncomment this in production
         try:
             async with client:
+                await asyncio.sleep(
+                    client_index * 300 + random.randint(0, 60)
+                )  # TODO: uncomment this in production
                 me = await client.get_me()
                 id = str(me.id)
-                print(
+                custom_print(
                     f"Client {client.session.filename} is started, working as {me.first_name}, id: {id}"
                 )
                 # await asyncio.Future()  # Keep the client
@@ -211,8 +208,8 @@ async def main():
                         groups[i]["timeout"] = groupData[i]["timeout"]
                         groups[i]["reply_timeout"] = groupData[i]["reply_timeout"]
                         groups[i]["reply_limit"] = groupData[i]["reply_limit"]
-                    try:
-                        for group_item in groups:
+                    for group_item in groups:
+                        try:
                             await asyncio.sleep(5)
                             if not FLAG_BOT_WORK:
                                 continue
@@ -225,6 +222,11 @@ async def main():
                                 and (current_time - prev_timestamp) < timeout
                             ):
                                 continue
+
+                            custom_print(
+                                f"group name: {group_item['name']}, prev_timestamp: {prev_timestamp}, current_time: {current_time}, timeout: {timeout}"
+                            )
+
                             async with client.action(group_item["group"].id, "typing"):
                                 await asyncio.sleep(random.randint(3, 10))
                                 messageItem = get_message_item(gender)
@@ -260,22 +262,23 @@ async def main():
                                 }
 
                                 await client.send_message(group_item["group"], message)
-                                print(
+                                custom_print(
                                     f"Client {client.session.filename} sent message into group: {group_item["name"]}: {message}, replying_session_names: {replying_session_names}"
                                 )
-                                group_item["prev_timestamp"] = int(time.time())
                             await asyncio.sleep(10)  # Non-blocking sleep
-                    except Exception as e:
-                        print(
-                            f"Error sending message from {client.session.filename}: {e}"
-                        )
-                        await asyncio.sleep(60)  # Wait longer if there is an error.
+                        except Exception as e:
+                            custom_print(
+                                f"Error sending message from {client.session.filename}: {e}"
+                            )
+                            await asyncio.sleep(30)  # Wait longer if there is an error.
+                        finally:
+                            group_item["prev_timestamp"] = int(time.time())
 
         except FloodWaitError as e:
-            print(f"Client {client.session.filename} FloodWaitError: {e}")
+            custom_print(f"Client {client.session.filename} FloodWaitError: {e}")
             await asyncio.sleep(e.seconds)  # Wait for the specified time
         except Exception as e:
-            print(f"Client {client.session.filename} encountered an error: {e}")
+            custom_print(f"Client {client.session.filename} encountered an error: {e}")
 
     tasks = [
         run_client(client["client"], client["gender"], client["session_name"], index)
