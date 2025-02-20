@@ -181,7 +181,7 @@ async def main():
         try:
             async with client:
                 await asyncio.sleep(
-                    client_index * 300 + random.randint(0, 60)
+                    client_index * 1800 + random.randint(0, 60)
                 )  # TODO: uncomment this in production
                 me = await client.get_me()
                 id = str(me.id)
