@@ -208,6 +208,9 @@ async def main():
                         groups[i]["timeout"] = groupData[i]["timeout"]
                         groups[i]["reply_timeout"] = groupData[i]["reply_timeout"]
                         groups[i]["reply_limit"] = groupData[i]["reply_limit"]
+                    custom_print(
+                        f"{client.session.filename} is looping... read from synced data..."
+                    )
                     for group_item in groups:
                         try:
                             await asyncio.sleep(5)
@@ -265,14 +268,14 @@ async def main():
                                 custom_print(
                                     f"Client {client.session.filename} sent message into group: {group_item["name"]}: {message}, replying_session_names: {replying_session_names}"
                                 )
+                            group_item["prev_timestamp"] = int(time.time())
                             await asyncio.sleep(10)  # Non-blocking sleep
                         except Exception as e:
                             custom_print(
                                 f"Error sending message from {client.session.filename}: {e}"
                             )
-                            await asyncio.sleep(30)  # Wait longer if there is an error.
-                        finally:
                             group_item["prev_timestamp"] = int(time.time())
+                            await asyncio.sleep(30)  # Wait longer if there is an error.
 
         except FloodWaitError as e:
             custom_print(f"Client {client.session.filename} FloodWaitError: {e}")
