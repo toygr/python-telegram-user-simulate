@@ -208,7 +208,7 @@ async def main():
                         groups[i]["timeout"] = groupData[i]["timeout"]
                         groups[i]["reply_timeout"] = groupData[i]["reply_timeout"]
                         groups[i]["reply_limit"] = groupData[i]["reply_limit"]
-                    custom_print(
+                    print(
                         f"{client.session.filename} is looping... read from synced data..."
                     )
                     for group_item in groups:
@@ -299,6 +299,7 @@ def index():
 def start():
     global FLAG_BOT_WORK
     FLAG_BOT_WORK = True
+    custom_print(f"bot started")
     return redirect("/")
 
 
@@ -306,12 +307,14 @@ def start():
 def stop():
     global FLAG_BOT_WORK
     FLAG_BOT_WORK = False
+    custom_print(f"bot stopped")
     return redirect("/")
 
 
 @app.route("/sync")
 def sync():
     sync_sheet_data()
+    custom_print(f"bot synced with sheet")
     return redirect("/")
 
 
